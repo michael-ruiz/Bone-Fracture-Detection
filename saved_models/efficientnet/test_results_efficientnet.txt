@@ -1,0 +1,27 @@
+
+============================================================
+Test Results - EfficientNet-B0 - 2025-10-30 13:03:16
+============================================================
+
+Overall Metrics:
+  Accuracy: 1.0000
+  AUC-ROC: 1.0000
+
+Class: Not Fractured (0)
+  Precision: 1.0000
+  Recall: 1.0000
+  F1-Score: 1.0000
+
+Class: Fractured (1)
+  Precision: 1.0000
+  Recall: 1.0000
+  F1-Score: 1.0000
+
+Confusion Matrix:
+  True Positives (Not Fractured correctly identified): 3
+  True Negatives (Fractured correctly identified): 61
+  False Positives (Fractured misclassified as Not Fractured): 0
+  False Negatives (Not Fractured misclassified as Fractured): 0
+
+Total Samples: 64
+============================================================

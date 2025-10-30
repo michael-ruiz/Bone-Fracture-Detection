@@ -1,0 +1,27 @@
+
+============================================================
+Test Results - 2025-10-30 12:37:41
+============================================================
+
+Overall Metrics:
+  Accuracy: 0.9531
+  AUC-ROC: 0.7131
+
+Class: Fractured (0)
+  Precision: 0.0000
+  Recall: 0.0000
+  F1-Score: 0.0000
+
+Class: Not Fractured (1)
+  Precision: 0.9531
+  Recall: 1.0000
+  F1-Score: 0.9760
+
+Confusion Matrix:
+  True Positives (Fractured correctly identified): 0
+  True Negatives (Not Fractured correctly identified): 61
+  False Positives (Not Fractured misclassified as Fractured): 0
+  False Negatives (Fractured misclassified as Not Fractured): 3
+
+Total Samples: 64
+============================================================
