@@ -13,59 +13,85 @@ dotenv.load_dotenv()
 
 class BoneFractureDataset(Dataset):
     """
-    PyTorch Dataset for Kaggle Fracture Multi-Region X-ray Data
-    https://www.kaggle.com/datasets/bmadushanirodrigo/fracture-multi-region-x-ray-data
-    
-    Binary classification: fractured vs not fractured
-    
+    PyTorch Dataset for YOLO-format Bone Fracture Detection Data
+
+    Binary classification: fractured vs not fractured (healthy)
+
     Dataset structure:
     root_dir/
     ├── train/
-    │   ├── fractured/
-    │   └── not fractured/
-    ├── val/
-    │   ├── fractured/
-    │   └── not fractured/
+    │   ├── images/
+    │   └── labels/  (YOLO format)
+    ├── valid/
+    │   ├── images/
+    │   └── labels/
     └── test/
-        ├── fractured/
-        └── not fractured/
+        ├── images/
+        └── labels/
+
+    Classes: 0-8 are various fracture types, 2='Healthy'
+    Binary mapping: Healthy (class 2) → 0 (not fractured), All others → 1 (fractured)
     """
-    
+
     def __init__(self, root_dir, split='train', transform=None):
         """
         Args:
-            root_dir (str): Root directory containing train/val/test folders
+            root_dir (str): Root directory containing train/valid/test folders
             split (str): One of 'train', 'val', or 'test'
             transform (callable, optional): Optional transform to be applied on images
         """
         self.root_dir = root_dir
         self.split = split
         self.transform = transform
-        
-        # Path to the split folder
-        self.split_dir = os.path.join(root_dir, split)
-        
-        # Define classes
-        self.classes = ['fractured', 'not fractured']
+
+        # Path to the split folder (map 'val' to 'valid' for compatibility)
+        split_name = 'valid' if split == 'val' else split
+        self.split_dir = os.path.join(root_dir, split_name)
+
+        # Define binary classes for output
+        self.classes = ['not fractured', 'fractured']
         self.class_to_idx = {cls: idx for idx, cls in enumerate(self.classes)}
-        
+
+        # YOLO class names (from data.yaml)
+        self.yolo_classes = ['Comminuted', 'Greenstick', 'Healthy', 'Linear',
+                            'Oblique Displaced', 'Oblique', 'Segmental', 'Spiral',
+                            'Transverse Displaced', 'Transverse']
+
+        # Path to images and labels
+        images_dir = os.path.join(self.split_dir, 'images')
+        labels_dir = os.path.join(self.split_dir, 'labels')
+
         # Collect all image paths and labels
         self.samples = []
-        for class_name in self.classes:
-            class_dir = os.path.join(self.split_dir, class_name)
-            
-            if not os.path.exists(class_dir):
-                print(f"Warning: {class_dir} does not exist")
-                continue
-            
-            class_idx = self.class_to_idx[class_name]
-            
-            for img_name in os.listdir(class_dir):
+
+        if not os.path.exists(images_dir):
+            print(f"Warning: {images_dir} does not exist")
+        else:
+            for img_name in os.listdir(images_dir):
                 if img_name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                    img_path = os.path.join(class_dir, img_name)
-                    self.samples.append((img_path, class_idx))
-        
-        print(f"{split.capitalize()} set: {len(self.samples)} images")
+                    img_path = os.path.join(images_dir, img_name)
+
+                    # Get corresponding label file
+                    label_name = os.path.splitext(img_name)[0] + '.txt'
+                    label_path = os.path.join(labels_dir, label_name)
+
+                    # Read label to determine if fractured or not
+                    # If label file exists and contains classes, check if it's 'Healthy' (class 2)
+                    is_fractured = 1  # Default: assume fractured
+
+                    if os.path.exists(label_path):
+                        with open(label_path, 'r') as f:
+                            lines = f.readlines()
+                            if lines:
+                                # Get the first class in the label (YOLO format: class x y w h)
+                                first_class = int(lines[0].split()[0])
+                                # Class 2 is 'Healthy', map to 0 (not fractured)
+                                # All other classes map to 1 (fractured)
+                                is_fractured = 0 if first_class == 2 else 1
+
+                    self.samples.append((img_path, is_fractured))
+
+        print(f"{split_name.capitalize()} set: {len(self.samples)} images")
     
     def __len__(self):
         return len(self.samples)
@@ -200,8 +226,8 @@ if __name__ == "__main__":
     print(f"Unique labels: {labels.unique()}")
     
     # Show sample distribution in batch
-    fractured_count = (labels == 0).sum().item()
-    not_fractured_count = (labels == 1).sum().item()
+    not_fractured_count = (labels == 0).sum().item()
+    fractured_count = (labels == 1).sum().item()
     print(f"\nBatch composition:")
-    print(f"  Fractured: {fractured_count}")
     print(f"  Not fractured: {not_fractured_count}")
+    print(f"  Fractured: {fractured_count}")
